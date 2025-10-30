@@ -1,5 +1,11 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 interface User {
@@ -20,7 +26,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Decode JWT payload mà không cần package
+// Giải mã JWT (tự viết, không dùng thư viện)
 const decodeToken = (token: string): User | null => {
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
@@ -36,29 +42,38 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Hàm kiểm tra token mỗi khi route thay đổi
   useEffect(() => {
     const token = localStorage.getItem("token");
+
     if (token) {
       const decoded = decodeToken(token);
       if (decoded) {
         setUser(decoded);
-        if (pathname === "/login") router.replace("/dashboard"); // redirect nếu đang ở login
+        if (pathname === "/login") router.replace("/dashboard");
       } else {
         localStorage.removeItem("token");
+        setUser(null);
+        if (pathname !== "/login") router.replace("/login");
       }
     } else {
-      if (pathname !== "/login") router.replace("/login"); // chưa login → redirect login
+      if (pathname !== "/login") router.replace("/login");
     }
+
     setLoading(false);
   }, [pathname, router]);
 
+  // Hàm đăng nhập
   const login = (token: string) => {
     localStorage.setItem("token", token);
     const decoded = decodeToken(token);
-    if (decoded) setUser(decoded);
-    router.replace("/dashboard");
+    if (decoded) {
+      setUser(decoded);
+      router.replace("/dashboard");
+    }
   };
 
+  // Hàm đăng xuất
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
@@ -67,11 +82,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   return (
     <AuthContext.Provider value={{ user, login, logout, loading }}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };
 
+// Hook dùng trong component
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth phải được dùng trong AuthProvider");

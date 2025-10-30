@@ -3,17 +3,21 @@ import React, { Dispatch, SetStateAction } from "react";
 import { motion } from "framer-motion";
 import { FaUser, FaFileContract, FaClipboardList, FaGraduationCap, FaSignOutAlt } from "react-icons/fa";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext"; // ✅ thêm dòng này
 
 interface SidebarProps {
   activeMenu: string;
   setActiveMenu: Dispatch<SetStateAction<string>>;
-  logout: () => void;
+    logout: () => void; // ✅ thêm dòng này
+
 }
 
-export default function Sidebar({ activeMenu, setActiveMenu, logout }: SidebarProps) {
+export default function Sidebar({ activeMenu, setActiveMenu }: SidebarProps) {
   const router = useRouter();
+  const { logout } = useAuth(); // ✅ gọi hàm logout từ context
 
   const menuItems = [
+    { id: "home", label: "Trang chủ", icon: <FaUser />, path: "/" },
     { id: "profile", label: "Thông tin cá nhân", icon: <FaUser />, path: "/dashboard/profile" },
     { id: "createUser", label: "Tạo tài khoản người dùng", icon: <FaFileContract />, path: "/dashboard/create-user" },
     { id: "leaders", label: "Thông tin lãnh đạo", icon: <FaClipboardList />, path: "/dashboard/leaders" },
@@ -68,6 +72,8 @@ export default function Sidebar({ activeMenu, setActiveMenu, logout }: SidebarPr
           </div>
         ))}
       </nav>
+
+      {/* ✅ Nút đăng xuất hoạt động */}
       <button
         onClick={logout}
         className="mt-auto flex items-center gap-2 px-4 py-3 rounded-lg bg-red-500 hover:bg-red-600 text-white transition"

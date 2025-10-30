@@ -3,7 +3,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import Layout from "./components/layout"; // Chú ý viết hoa 'L'
 
 export const metadata = {
-  title: "HR Dashboard",
+  title: "Hệ Thống Quản Lý ",
   description: "Hệ thống quản lý nhân sự",
 };
 
