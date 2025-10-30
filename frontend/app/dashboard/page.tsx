@@ -1,38 +1,24 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { useAuth } from "../../context/AuthContext";
+import React from "react";
+import { motion } from "framer-motion";
 
 export default function DashboardPage() {
-  const { logout } = useAuth();
-  const [profile, setProfile] = useState<any>(null);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-    fetch("http://localhost:5000/api/auth/profile", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => setProfile(data));
-  }, []);
-
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold">Trang chính</h1>
-      {profile ? (
-        <div className="mt-4">
-          <p>Tên: {profile.full_name || "Chưa cập nhật"}</p>
-          <p>Email: {profile.email || "Chưa có"}</p>
-        </div>
-      ) : (
-        <p>Đang tải...</p>
-      )}
-      <button
-        onClick={logout}
-        className="mt-6 bg-red-500 text-white px-4 py-2 rounded"
-      >
-        Đăng xuất
-      </button>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <motion.div whileHover={{ scale: 1.03 }} className="bg-white shadow-md rounded-2xl p-6 border-l-4 border-blue-400">
+          <h3 className="font-semibold text-gray-600">Số lượng nhân viên</h3>
+          <p className="mt-2 text-gray-800 font-bold text-2xl">120</p>
+        </motion.div>
+        <motion.div whileHover={{ scale: 1.03 }} className="bg-white shadow-md rounded-2xl p-6 border-l-4 border-green-400">
+          <h3 className="font-semibold text-gray-600">Khóa học đang diễn ra</h3>
+          <p className="mt-2 text-gray-800 font-bold text-2xl">8</p>
+        </motion.div>
+        <motion.div whileHover={{ scale: 1.03 }} className="bg-white shadow-md rounded-2xl p-6 border-l-4 border-purple-400">
+          <h3 className="font-semibold text-gray-600">Nhân viên nghỉ việc</h3>
+          <p className="mt-2 text-gray-800 font-bold text-2xl">3</p>
+        </motion.div>
+      </div>
     </div>
   );
 }

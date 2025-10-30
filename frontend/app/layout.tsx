@@ -1,17 +1,21 @@
-"use client";
-
-import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
+import { AuthProvider } from "@/context/AuthContext";
+import Layout from "./components/layout"; // Chú ý viết hoa 'L'
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export const metadata = {
+  title: "HR Dashboard",
+  description: "Hệ thống quản lý nhân sự",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi">
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <Layout>
+            {children}
+          </Layout>
+        </AuthProvider>
       </body>
     </html>
   );
