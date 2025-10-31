@@ -1,27 +1,77 @@
-import * as React from "react";
-import { cn } from "../../../lib/utils";
+"use client";
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "default" | "outline" | "destructive";
+import * as React from "react";
+import { cn } from "@/lib/utils";
+
+interface TabsProps {
+  defaultValue?: string;
+  children: React.ReactNode;
+  className?: string;
 }
 
-export function Button({
+export function Tabs({ defaultValue, children, className }: TabsProps) {
+  const [activeTab, setActiveTab] = React.useState(defaultValue);
+  return (
+    <div className={cn("w-full", className)}>
+      {React.Children.map(children, (child: any) =>
+        React.cloneElement(child, { activeTab, setActiveTab })
+      )}
+    </div>
+  );
+}
+
+interface TabsListProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function TabsList({ children, className }: TabsListProps) {
+  return <div className={cn("flex gap-2 border-b mb-4", className)}>{children}</div>;
+}
+
+interface TabsTriggerProps {
+  value: string;
+  children: React.ReactNode;
+  className?: string;
+  activeTab?: string;
+  setActiveTab?: (val: string) => void;
+}
+
+export function TabsTrigger({
+  value,
+  children,
   className,
-  variant = "default",
-  ...props
-}: ButtonProps) {
-  const base =
-    "inline-flex items-center justify-center px-4 py-2 rounded-md font-medium transition-all focus:outline-none";
-  const variants = {
-    default: "bg-blue-600 text-white hover:bg-blue-700",
-    outline: "border border-gray-300 text-gray-700 hover:bg-gray-100",
-    destructive: "bg-red-600 text-white hover:bg-red-700",
-  };
+  activeTab,
+  setActiveTab,
+}: TabsTriggerProps) {
+  const isActive = activeTab === value;
   return (
     <button
-      className={cn(base, variants[variant], className)}
-      {...props}
-    />
+      onClick={() => setActiveTab?.(value)}
+      className={cn(
+        "px-3 py-2 rounded-t-lg text-sm font-medium transition-colors",
+        isActive ? "bg-white border-b-2 border-blue-500 text-blue-600" : "text-gray-500 hover:text-gray-700",
+        className
+      )}
+    >
+      {children}
+    </button>
   );
+}
+
+interface TabsContentProps {
+  value: string;
+  children: React.ReactNode;
+  className?: string;
+  activeTab?: string;
+}
+
+export function TabsContent({
+  value,
+  children,
+  className,
+  activeTab,
+}: TabsContentProps) {
+  if (activeTab !== value) return null;
+  return <div className={cn("p-4", className)}>{children}</div>;
 }

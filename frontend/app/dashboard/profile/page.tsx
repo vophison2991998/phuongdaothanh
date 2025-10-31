@@ -1,33 +1,28 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "../../components/ui/avatar";
+import { Badge } from "../../components/ui/badge";
+import { Progress } from "../../components/ui/progress";
+import { Separator } from "../../components/ui/separator";
 import { motion } from "framer-motion";
-import { Toaster, toast } from "sonner";
 
 export default function AdminProfilePage() {
-  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem("token");
-        const adminId = localStorage.getItem("adminId"); // 👈 Lưu khi login
-
-        if (!token || !adminId) {
-          toast.error("⚠️ Bạn chưa đăng nhập!");
-          return;
-        }
-
-        const res = await fetch(`http://localhost:5000/api/auth/${adminId}`, {
+        const res = await fetch("http://localhost:5000/api/auth/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
-
-        if (!res.ok) throw new Error("Không thể tải thông tin!");
         const data = await res.json();
-
-        setUser(data);
+        setProfile(data);
       } catch (err) {
-        toast.error("❌ Lỗi khi tải thông tin quản trị viên!");
+        console.error("Lỗi tải dữ liệu:", err);
       } finally {
         setLoading(false);
       }
@@ -37,91 +32,112 @@ export default function AdminProfilePage() {
 
   if (loading)
     return (
-      <div className="h-screen flex items-center justify-center text-teal-600 text-xl">
-        ⏳ Đang tải dữ liệu hồ sơ...
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="text-indigo-600 text-lg font-medium animate-pulse">
+          Đang tải thông tin hồ sơ...
+        </div>
       </div>
     );
 
-  if (!user)
+  if (!profile)
     return (
-      <div className="h-screen flex items-center justify-center text-red-500 text-xl">
-        ⚠️ Không tìm thấy thông tin quản trị viên!
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="text-gray-500 text-lg">Không tìm thấy dữ liệu hồ sơ.</div>
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-gray-100 flex flex-col">
-      <Toaster position="top-center" richColors />
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-100 py-10 px-4"
+    >
+      <Card className="max-w-5xl mx-auto shadow-2xl rounded-3xl overflow-hidden border border-indigo-100 bg-white/80 backdrop-blur-md">
+        {/* Header */}
+        <CardHeader className="flex flex-col items-center gap-4 py-8 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white relative">
+          <div className="absolute top-0 left-0 w-full h-full bg-indigo-600/40 blur-3xl -z-10" />
+          <Avatar className="w-32 h-32 border-4 border-white shadow-md">
+            <AvatarImage src={profile.avatar_url || "/default-avatar.png"} alt={profile.full_name} />
+            <AvatarFallback>{profile.full_name?.[0] || "A"}</AvatarFallback>
+          </Avatar>
 
-      <header className="bg-white shadow-md py-4 px-6 flex justify-center items-center">
-        <h1 className="text-2xl font-bold text-teal-700">
-          🏢 Hồ sơ quản trị viên
-        </h1>
-      </header>
-
-      <main className="flex-grow container mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <motion.div
-          className="bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <img
-            src={user.avatar_url || "/avatar-placeholder.png"}
-            alt="Avatar"
-            className="w-40 h-40 rounded-full border-4 border-teal-500 object-cover shadow-md"
-          />
-
-          <h2 className="text-2xl font-bold mt-4 text-gray-800">
-            {user.full_name}
-          </h2>
-          <p className="text-gray-500 italic mt-1">{user.position}</p>
-
-          <div className="mt-6 w-full space-y-3 text-sm text-gray-700">
-            <Info label="📞 Số điện thoại" value={user.phone} />
-            <Info label="📧 Email" value={user.email} />
-            <Info label="👤 Giới tính" value={user.gender} />
-            <Info label="🎂 Ngày sinh" value={user.birth_date} />
-            <Info label="📍 Địa chỉ" value={user.address} />
+          <div>
+            <CardTitle className="text-3xl font-bold tracking-tight">
+              {profile.full_name}
+            </CardTitle>
+            <p className="text-indigo-100 text-sm">{profile.position || "Chưa cập nhật chức vụ"}</p>
           </div>
-        </motion.div>
 
-        <motion.div
-          className="lg:col-span-2 bg-white rounded-2xl shadow-xl p-10 space-y-10"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Section title="🎯 Mục tiêu nghề nghiệp">
-            <p className="text-gray-700 leading-relaxed">
-              {user.career_objective || "Chưa có thông tin"}
-            </p>
-          </Section>
-        </motion.div>
-      </main>
+          <Badge
+            variant="secondary"
+            className="bg-white/20 border border-white/30 text-white px-4 py-1 mt-2 backdrop-blur-sm"
+          >
+            @{profile.username}
+          </Badge>
+        </CardHeader>
 
-      <footer className="bg-white border-t text-center text-gray-500 py-4 text-sm">
-        © {new Date().getFullYear()} Quản trị hệ thống. All rights reserved.
-      </footer>
-    </div>
-  );
-}
+        <CardContent className="p-8">
+          <div className="grid md:grid-cols-2 gap-10">
+            {/* Thông tin cá nhân */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <h2 className="font-semibold text-indigo-700 text-lg mb-3 border-l-4 border-indigo-500 pl-3">
+                Thông tin cá nhân
+              </h2>
+              <ul className="space-y-3 text-gray-700 leading-relaxed">
+                <li><strong>Email:</strong> {profile.email || "—"}</li>
+                <li><strong>Điện thoại:</strong> {profile.phone || "—"}</li>
+                <li><strong>Địa chỉ:</strong> {profile.address || "—"}</li>
+                <li><strong>Giới tính:</strong> {profile.gender || "—"}</li>
+                <li><strong>Ngày sinh:</strong>{" "}
+                  {profile.birth_date ? new Date(profile.birth_date).toLocaleDateString() : "—"}
+                </li>
+              </ul>
+            </motion.div>
 
-function Info({ label, value }: any) {
-  return (
-    <div className="flex flex-col">
-      <span className="font-medium mb-1">{label}</span>
-      <span className="bg-gray-50 p-2 rounded">{value || "—"}</span>
-    </div>
-  );
-}
+            {/* Mục tiêu & Tiến độ */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <h2 className="font-semibold text-indigo-700 text-lg mb-3 border-l-4 border-indigo-500 pl-3">
+                Mục tiêu nghề nghiệp
+              </h2>
+              <p className="text-gray-700 leading-relaxed bg-indigo-50 p-4 rounded-lg border border-indigo-100 shadow-sm">
+                {profile.career_objective || "Chưa cập nhật mục tiêu nghề nghiệp."}
+              </p>
 
-function Section({ title, children }: any) {
-  return (
-    <div>
-      <h3 className="text-xl font-semibold text-teal-700 border-b pb-2 mb-4">
-        {title}
-      </h3>
-      {children}
-    </div>
+
+
+
+              <div className="mt-6">
+                <h3 className="font-semibold text-indigo-700 text-lg mb-2 border-l-4 border-indigo-500 pl-3">
+                  Tiến độ hồ sơ
+                </h3>
+                <Progress value={80} className="w-full" />
+                <p className="text-xs text-gray-500 mt-1">Đã hoàn thiện 80%</p>
+              </div>
+            </motion.div>
+          </div>
+
+          <Separator className="my-8" />
+
+          {/* Nút hành động */}
+          <div className="flex justify-center gap-4">
+            <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2 rounded-xl shadow transition-all duration-300">
+              Cập nhật hồ sơ
+            </button>
+            <button className="bg-white border border-indigo-300 text-indigo-700 hover:bg-indigo-50 font-medium px-6 py-2 rounded-xl shadow transition-all duration-300">
+              Đăng xuất
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }

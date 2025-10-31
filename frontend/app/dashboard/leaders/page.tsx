@@ -1,300 +1,313 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import Image from "next/image";
+import { FaPlus, FaTrash, FaEdit, FaSearchMinus, FaSearchPlus } from "react-icons/fa";
+import toast, { Toaster } from "react-hot-toast";
 
-// 🧠 Kiểu dữ liệu nhân sự
+/* ============================================================
+   Interfaces & Data
+============================================================ */
 interface Leader {
-  id: number;
+  id: string;
   name: string;
-  position: string;
-  term: string;
-  image: string;
-  children?: Leader[];
+  title: string;
+  term?: string;
+  photo?: string;
+  children: Leader[];
+  scale: number;
 }
 
-// 🎯 Trang chính
-export default function LeadersPage() {
-  const [leaders, setLeaders] = useState<Leader[]>([
-    {
-      id: 1,
-      name: "Nguyễn Văn A",
-      position: "Giám đốc",
-      term: "2020 - 2025",
-      image: "/images/director.jpg",
-      children: [
-        {
-          id: 2,
-          name: "Trần Thị B",
-          position: "Phó giám đốc 1",
-          term: "2021 - 2025",
-          image: "/images/vice1.jpg",
-          children: [
-            {
-              id: 4,
-              name: "Lê Văn D",
-              position: "Trưởng phòng nhân sự",
-              term: "2022 - 2025",
-              image: "/images/hr.jpg",
-            },
-            {
-              id: 5,
-              name: "Phạm Thị E",
-              position: "Trưởng phòng kế toán",
-              term: "2022 - 2025",
-              image: "/images/accounting.jpg",
-            },
-          ],
-        },
-        {
-          id: 3,
-          name: "Hoàng Văn C",
-          position: "Phó giám đốc 2",
-          term: "2021 - 2025",
-          image: "/images/vice2.jpg",
-          children: [
-            {
-              id: 6,
-              name: "Ngô Văn F",
-              position: "Trưởng phòng kỹ thuật",
-              term: "2022 - 2025",
-              image: "/images/tech.jpg",
-            },
-            {
-              id: 7,
-              name: "Đặng Thị G",
-              position: "Trưởng phòng marketing",
-              term: "2022 - 2025",
-              image: "/images/marketing.jpg",
-            },
-          ],
-        },
-      ],
-    },
-  ]);
+const initialLeader: Leader = {
+  id: "1",
+  name: "Nguyễn Văn A",
+  title: "Tổng Giám Đốc",
+  term: "2024 - 2028",
+  photo: "/images/leaders/leader1.jpg",
+  scale: 1,
+  children: [],
+};
 
-  const [modalType, setModalType] = useState<"add" | "edit" | "view" | null>(null);
-  const [selected, setSelected] = useState<Leader | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    position: "",
-    term: "",
-    image: "",
+/* ============================================================
+   Helper Functions
+============================================================ */
+const updateScaleRecursive = (node: Leader): Leader => {
+  const newScale = node.children.length >= 5 ? 0.8 : 1;
+
+  const updatedChildren = node.children.map((child) => {
+    const updatedChild = updateScaleRecursive(child);
+    return { ...updatedChild, scale: updatedChild.scale * newScale };
   });
 
-  // ⚙️ Mở modal thêm/sửa/xem
-  const openModal = (type: "add" | "edit" | "view", leader?: Leader) => {
-    setModalType(type);
-    setSelected(leader || null);
-    setFormData(
-      type === "edit" && leader
-        ? { name: leader.name, position: leader.position, term: leader.term, image: leader.image }
-        : { name: "", position: "", term: "", image: "" }
-    );
-  };
+  return { ...node, children: updatedChildren, scale: newScale };
+};
 
-  // 🧹 Xóa nhân sự
-  const handleDelete = (id: number) => {
-    const removeNode = (nodes: Leader[]): Leader[] =>
-      nodes
-        .filter(n => n.id !== id)
-        .map(n => ({ ...n, children: n.children ? removeNode(n.children) : [] }));
-    setLeaders(removeNode(leaders));
-  };
+/* ============================================================
+   Components
+============================================================ */
+const PersonCard = memo(
+  ({
+    leader,
+    onClick,
+    onAdd,
+    onEdit,
+    onDelete,
+  }: {
+    leader: Leader;
+    onClick: (leader: Leader) => void;
+    onAdd: (leaderId: string) => void;
+    onEdit: (leader: Leader) => void;
+    onDelete: (leaderId: string) => void;
+  }) => (
+    <motion.div
+      layout
+      whileHover={{ scale: 1.05 }}
+      transition={{ type: "spring", stiffness: 200 }}
+      className="relative flex flex-col items-center bg-white border border-gray-100 shadow-md rounded-2xl p-4 w-56"
+      style={{ scale: leader.scale }}
+    >
+      <div
+        onClick={() => onClick(leader)}
+        className="w-24 h-24 rounded-full overflow-hidden border-4 border-blue-400 cursor-pointer hover:ring-4 hover:ring-blue-300 transition"
+      >
+        <Image
+          src={leader.photo || "/images/placeholder-avatar.png"}
+          alt={leader.name}
+          width={100}
+          height={100}
+          className="object-cover w-full h-full"
+        />
+      </div>
 
-  // 💾 Lưu (thêm hoặc sửa)
-  const handleSubmit = () => {
-    const newNode: Leader = {
-      id: Date.now(),
-      name: formData.name,
-      position: formData.position,
-      term: formData.term,
-      image: formData.image || "/images/default-avatar.png",
+      <h3 className="mt-3 text-center font-semibold text-gray-800">{leader.name}</h3>
+      <p className="text-sm text-gray-500 text-center">{leader.title}</p>
+      {leader.term && <p className="text-xs text-gray-400 mt-1 italic">Nhiệm kỳ: {leader.term}</p>}
+
+      <div className="flex gap-2 mt-3">
+        <IconButton icon={<FaPlus />} color="green" onClick={() => onAdd(leader.id)} />
+        <IconButton icon={<FaEdit />} color="blue" onClick={() => onEdit(leader)} />
+        <IconButton icon={<FaTrash />} color="red" onClick={() => onDelete(leader.id)} />
+      </div>
+    </motion.div>
+  )
+);
+PersonCard.displayName = "PersonCard";
+
+/* ------------------------------- */
+const IconButton = ({
+  icon,
+  color,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  color: string;
+  onClick: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    className={`p-1.5 bg-${color}-100 hover:bg-${color}-200 rounded-full transition`}
+  >
+    <span className={`text-${color}-600 text-sm`}>{icon}</span>
+  </button>
+);
+
+/* ------------------------------- */
+const LeaderTree = memo(
+  ({
+    leader,
+    onClick,
+    onAdd,
+    onEdit,
+    onDelete,
+  }: {
+    leader: Leader;
+    onClick: (leader: Leader) => void;
+    onAdd: (leaderId: string) => void;
+    onEdit: (leader: Leader) => void;
+    onDelete: (leaderId: string) => void;
+  }) => (
+    <motion.div layout className="flex flex-col items-center">
+      <PersonCard leader={leader} onClick={onClick} onAdd={onAdd} onEdit={onEdit} onDelete={onDelete} />
+
+      {leader.children.length > 0 && (
+        <motion.div
+          layout
+          initial={{ opacity: 0, scaleY: 0 }}
+          animate={{ opacity: 1, scaleY: 1 }}
+          transition={{ duration: 0.4 }}
+          className="relative flex flex-col items-center"
+          style={{ marginTop: `${32 * leader.scale}px` }}
+        >
+          <div className="w-0.5 h-8 bg-gray-300" />
+          <div className="relative flex justify-center items-start">
+            <div className="absolute top-4 left-0 right-0 h-0.5 bg-gray-300" />
+            <div
+              className="flex flex-wrap justify-center"
+              style={{ gap: `${12 * leader.scale}px`, marginTop: `${32 * leader.scale}px` }}
+            >
+              {leader.children.map((child) => (
+                <div key={child.id} className="relative flex flex-col items-center">
+                  <div className="absolute -top-8 w-0.5 h-8 bg-gray-300" />
+                  <LeaderTree
+                    leader={child}
+                    onClick={onClick}
+                    onAdd={onAdd}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </motion.div>
+  )
+);
+LeaderTree.displayName = "LeaderTree";
+
+/* ============================================================
+   Main Component
+============================================================ */
+export default function LeadersPage() {
+  const [tree, setTree] = useState<Leader>(initialLeader);
+  const [selected, setSelected] = useState<Leader | null>(null);
+  const [zoom, setZoom] = useState(1);
+
+  /* ------------ Handlers ------------ */
+  const handleClick = useCallback((leader: Leader) => setSelected(leader), []);
+
+  const handleAdd = useCallback((leaderId: string) => {
+    const name = prompt("Nhập tên nhân viên mới:");
+    if (!name) return;
+
+    const addToTree = (node: Leader): Leader => {
+      if (node.id === leaderId) {
+        if (node.children.length >= 5) {
+          toast.error("❌ Mỗi node chỉ được có tối đa 5 node con!");
+          return node;
+        }
+        const newMember: Leader = {
+          id: Date.now().toString(),
+          name,
+          title: "Chức vụ mới",
+          photo: "/images/placeholder-avatar.png",
+          scale: 1,
+          children: [],
+        };
+        return { ...node, children: [...node.children, newMember] };
+      }
+      return { ...node, children: node.children.map(addToTree) };
     };
 
-    const updateTree = (nodes: Leader[]): Leader[] =>
-      nodes.map(n => {
-        if (modalType === "edit" && selected?.id === n.id) {
-          return { ...n, ...formData };
-        }
-        if (modalType === "add" && selected?.id === n.id) {
-          return { ...n, children: [...(n.children || []), newNode] };
-        }
-        return { ...n, children: n.children ? updateTree(n.children) : [] };
-      });
+    const updatedTree = addToTree(tree);
+    setTree(updateScaleRecursive(updatedTree));
+    toast.success(`✅ Đã thêm nhân viên "${name}"`);
+  }, [tree]);
 
-    if (modalType === "add" && !selected) {
-      setLeaders([...leaders, newNode]);
-    } else {
-      setLeaders(updateTree(leaders));
-    }
-    setModalType(null);
-  };
+  const handleDelete = useCallback(
+    (leaderId: string) => {
+      if (!confirm("Bạn có chắc muốn xóa người này?")) return;
 
-  // 🖼️ Upload hình ảnh
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = ev => {
-        setFormData({ ...formData, image: ev.target?.result as string });
+      const removeFromTree = (node: Leader): Leader | null => {
+        if (node.id === leaderId) return null;
+        const children = node.children.map(removeFromTree).filter(Boolean) as Leader[];
+        return { ...node, children };
       };
-      reader.readAsDataURL(file);
-    }
-  };
 
-  // 🪴 Render cây
-  const renderTree = (node: Leader) => (
-    <div key={node.id} className="flex flex-col items-center relative">
-      <motion.div
-        whileHover={{ scale: 1.05 }}
-        className="bg-white border rounded-2xl shadow-md p-4 w-[230px] text-center relative"
-      >
-        <img
-          src={node.image}
-          alt={node.name}
-          onClick={() => openModal("view", node)}
-          className="w-24 h-24 rounded-full mx-auto object-cover border-4 border-blue-400 cursor-pointer"
-        />
-        <h3 className="mt-3 font-semibold text-gray-800">{node.name}</h3>
-        <p className="text-sm text-gray-500">{node.position}</p>
-        <p className="text-xs text-gray-400 italic">{node.term}</p>
-
-        <div className="flex justify-center gap-3 mt-3">
-          <button
-            onClick={() => openModal("add", node)}
-            className="p-2 bg-green-500 text-white rounded-full hover:bg-green-600"
-          >
-            <FaPlus />
-          </button>
-          <button
-            onClick={() => openModal("edit", node)}
-            className="p-2 bg-yellow-500 text-white rounded-full hover:bg-yellow-600"
-          >
-            <FaEdit />
-          </button>
-          <button
-            onClick={() => handleDelete(node.id)}
-            className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
-          >
-            <FaTrash />
-          </button>
-        </div>
-      </motion.div>
-
-      {node.children?.length ? (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          transition={{ duration: 0.4 }}
-          className="flex justify-between mt-8 gap-10 relative"
-        >
-          {node.children.map(child => (
-            <div key={child.id} className="relative">
-              <div className="absolute -top-6 left-1/2 w-px h-6 bg-gray-300"></div>
-              {renderTree(child)}
-            </div>
-          ))}
-        </motion.div>
-      ) : null}
-    </div>
+      const updated = removeFromTree(tree);
+      if (updated) setTree(updateScaleRecursive(updated));
+      toast.error("🗑️ Đã xóa nhân viên!");
+    },
+    [tree]
   );
 
-  return (
-    <div className="flex flex-col items-center py-10 px-4 min-h-screen bg-gray-50">
-      <h1 className="text-3xl font-bold mb-10 text-gray-700">🌿 Cơ cấu tổ chức nhân sự</h1>
-      <div className="flex justify-center overflow-x-auto">{leaders.map(l => renderTree(l))}</div>
+  const handleEdit = useCallback(
+    (leader: Leader) => {
+      const newName = prompt("Nhập tên mới:", leader.name);
+      if (!newName) return;
+      const updateTree = (node: Leader): Leader => {
+        if (node.id === leader.id) return { ...node, name: newName };
+        return { ...node, children: node.children.map(updateTree) };
+      };
+      setTree(updateTree(tree));
+      toast.success(`✏️ Đã cập nhật tên "${newName}"`);
+    },
+    [tree]
+  );
 
-      {/* 🧩 MODALS */}
+  const zoomIn = useCallback(() => setZoom((z) => Math.min(z + 0.1, 2)), []);
+  const zoomOut = useCallback(() => setZoom((z) => Math.max(z - 0.1, 0.3)), []);
+
+  /* ------------ JSX ------------ */
+  return (
+    <div className="p-6 min-h-screen bg-gradient-to-b from-blue-50 to-gray-50 relative">
+      <Toaster position="top-right" />
+      <h1 className="text-3xl font-bold text-center text-blue-700 mb-4">
+        SƠ ĐỒ TỔ CHỨC NHÂN SỰ
+      </h1>
+
+      <div className="overflow-auto pb-8">
+        <motion.div
+          style={{ transform: `scale(${zoom})`, transformOrigin: "top center" }}
+          className="min-w-[900px] flex justify-center relative"
+        >
+          <LeaderTree
+            leader={tree}
+            onClick={handleClick}
+            onAdd={handleAdd}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        </motion.div>
+      </div>
+
+      {/* Zoom controls */}
+      <div className="fixed top-1/2 right-4 flex flex-col gap-2 bg-white/90 p-2 rounded-lg shadow-lg z-50">
+        <button onClick={zoomIn} className="p-2 bg-gray-200 rounded hover:bg-gray-300">
+          <FaSearchPlus />
+        </button>
+        <button onClick={zoomOut} className="p-2 bg-gray-200 rounded hover:bg-gray-300">
+          <FaSearchMinus />
+        </button>
+      </div>
+
+      {/* Modal hiển thị chi tiết */}
       <AnimatePresence>
-        {modalType && (
+        {selected && (
           <motion.div
-            className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            onClick={() => setSelected(null)}
           >
             <motion.div
-              className="bg-white rounded-2xl p-6 w-[400px] shadow-xl"
-              initial={{ scale: 0.8 }}
+              initial={{ scale: 0.85 }}
               animate={{ scale: 1 }}
-              exit={{ scale: 0.8 }}
+              exit={{ scale: 0.85 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl p-8 w-[400px] shadow-2xl text-center"
             >
-              {modalType === "view" && selected ? (
-                <div className="text-center">
-                  <img
-                    src={selected.image}
-                    alt={selected.name}
-                    className="w-28 h-28 mx-auto rounded-full border-4 border-blue-500"
-                  />
-                  <h2 className="mt-4 text-xl font-semibold">{selected.name}</h2>
-                  <p className="text-gray-500">{selected.position}</p>
-                  <p className="text-gray-400 italic">{selected.term}</p>
-                  <button
-                    onClick={() => setModalType(null)}
-                    className="mt-5 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                  >
-                    Đóng
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <h2 className="text-lg font-bold mb-4">
-                    {modalType === "edit" ? "Chỉnh sửa nhân sự" : "Thêm nhân sự mới"}
-                  </h2>
-                  <div className="space-y-3">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="w-full border p-2 rounded-lg"
-                    />
-                    {formData.image && (
-                      <img
-                        src={formData.image}
-                        alt="Preview"
-                        className="w-20 h-20 mx-auto rounded-full object-cover border"
-                      />
-                    )}
-                    <input
-                      type="text"
-                      placeholder="Họ và tên"
-                      value={formData.name}
-                      onChange={e => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full border p-2 rounded-lg"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Chức vụ"
-                      value={formData.position}
-                      onChange={e => setFormData({ ...formData, position: e.target.value })}
-                      className="w-full border p-2 rounded-lg"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Nhiệm kỳ"
-                      value={formData.term}
-                      onChange={e => setFormData({ ...formData, term: e.target.value })}
-                      className="w-full border p-2 rounded-lg"
-                    />
-                  </div>
-                  <div className="flex justify-end gap-3 mt-5">
-                    <button
-                      onClick={() => setModalType(null)}
-                      className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400"
-                    >
-                      Hủy
-                    </button>
-                    <button
-                      onClick={handleSubmit}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                    >
-                      Lưu
-                    </button>
-                  </div>
-                </>
+              <Image
+                src={selected.photo || "/images/placeholder-avatar.png"}
+                alt={selected.name}
+                width={120}
+                height={120}
+                className="rounded-full mx-auto mb-4 border-4 border-blue-400"
+              />
+              <h3 className="text-xl font-bold text-gray-700">{selected.name}</h3>
+              <p className="text-gray-500">{selected.title}</p>
+              {selected.term && (
+                <p className="text-sm text-gray-400 mt-1">Nhiệm kỳ: {selected.term}</p>
               )}
+              <button
+                onClick={() => setSelected(null)}
+                className="mt-6 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
+              >
+                Đóng
+              </button>
             </motion.div>
           </motion.div>
         )}
