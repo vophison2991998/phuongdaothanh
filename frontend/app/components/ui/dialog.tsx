@@ -21,12 +21,43 @@ export function Dialog({ open, onOpenChange, children }: any) {
 }
 
 export const DialogContent = ({ children }: any) => <>{children}</>;
+
 export const DialogHeader = ({ children }: any) => (
   <div className="mb-3">{children}</div>
 );
+
 export const DialogTitle = ({ children }: any) => (
   <h2 className="text-lg font-semibold">{children}</h2>
 );
+
 export const DialogFooter = ({ children }: any) => (
   <div className="flex justify-end gap-2 mt-4">{children}</div>
 );
+
+// 🆕 Thêm phần này:
+export function DialogTrigger({
+  asChild = false,
+  children,
+  onClick,
+  setOpen,
+}: any) {
+  const handleClick = (e: any) => {
+    if (onClick) onClick(e);
+    if (setOpen) setOpen(true);
+  };
+
+  if (asChild) {
+    return React.cloneElement(children, {
+      onClick: handleClick,
+    });
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
+    >
+      {children}
+    </button>
+  );
+}

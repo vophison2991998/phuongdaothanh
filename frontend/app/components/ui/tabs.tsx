@@ -3,73 +3,55 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-interface TabsProps {
-  defaultValue: string;
-  className?: string;
-  children: React.ReactNode;
-}
+/* ---- Tabs Wrapper ---- */
+export const Tabs = ({ children, value, onValueChange, className }: any) => {
+  const [activeTab, setActiveTab] = React.useState(value);
 
-export function Tabs({ defaultValue, className, children }: TabsProps) {
-  const [active, setActive] = React.useState(defaultValue);
-
-  const context = { active, setActive };
+  const handleChange = (val: string) => {
+    setActiveTab(val);
+    onValueChange?.(val);
+  };
 
   return (
     <div className={cn("w-full", className)}>
-      <TabsContext.Provider value={context}>{children}</TabsContext.Provider>
+      {React.Children.map(children, (child) =>
+        React.cloneElement(child, { activeTab, onChange: handleChange })
+      )}
     </div>
   );
-}
+};
 
-const TabsContext = React.createContext<any>(null);
-export function useTabs() {
-  return React.useContext(TabsContext);
-}
-
-export function TabsList({
-  className,
-  children,
-}: React.HTMLAttributes<HTMLDivElement>) {
+/* ---- TabsList ---- */
+export const TabsList = ({ children, activeTab, onChange }: any) => {
   return (
-    <div className={cn("flex gap-2 border-b border-gray-200", className)}>
-      {children}
+    <div className="flex flex-wrap gap-2 bg-gray-100 rounded-lg p-1">
+      {React.Children.map(children, (child) =>
+        React.cloneElement(child, { activeTab, onChange })
+      )}
     </div>
   );
-}
+};
 
-export function TabsTrigger({
-  value,
-  children,
-}: {
-  value: string;
-  children: React.ReactNode;
-}) {
-  const { active, setActive } = useTabs();
-  const isActive = active === value;
-
+/* ---- TabsTrigger ---- */
+export const TabsTrigger = ({ value, children, activeTab, onChange }: any) => {
+  const isActive = activeTab === value;
   return (
     <button
-      onClick={() => setActive(value)}
+      onClick={() => onChange(value)}
       className={cn(
-        "px-4 py-2 rounded-t-md text-sm font-medium transition-colors",
+        "px-4 py-2 rounded-md font-medium text-sm transition",
         isActive
-          ? "bg-blue-100 text-blue-700 border-b-2 border-blue-500"
-          : "text-gray-600 hover:text-gray-800"
+          ? "bg-indigo-500 text-white shadow-md"
+          : "text-gray-600 hover:bg-indigo-100"
       )}
     >
       {children}
     </button>
   );
-}
+};
 
-export function TabsContent({
-  value,
-  children,
-}: {
-  value: string;
-  children: React.ReactNode;
-}) {
-  const { active } = useTabs();
-  if (active !== value) return null;
-  return <div className="mt-4">{children}</div>;
-}
+/* ---- TabsContent ---- */
+export const TabsContent = ({ value, activeTab, children }: any) => {
+  if (value !== activeTab) return null;
+  return <div className="mt-6">{children}</div>;
+};
