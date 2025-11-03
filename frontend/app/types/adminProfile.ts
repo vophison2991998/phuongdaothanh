@@ -7,7 +7,9 @@ export interface WorkExperience {
   end_year?: string;
   description?: string;
 }
-
+export interface CareerObjective {
+  text: string;
+}
 export interface Education {
   school: string;
   major: string;
@@ -34,11 +36,13 @@ export interface AdminProfile {
   birth_date?: string;
   created_at?: string;
   avatar_url?: string;
-  career_objective?: string;
+  career_objective: CareerObjective[]; // đổi từ string → mảng
   background_url?: string;
 
   // ✅ Bỏ dấu ? — để luôn có mảng rỗng mặc định
   work_experience: WorkExperience[];
   education: Education[];
   skills: Skill[];
+  
+  
 }

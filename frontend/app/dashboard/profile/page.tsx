@@ -53,10 +53,10 @@ export default function AdminProfilePage() {
     >
       <Card className="max-w-5xl mx-auto shadow-lg rounded-2xl border border-gray-200 bg-white">
         {/* HEADER */}
-       <CardHeader className="flex flex-col items-center text-center py-8 border-b bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-2xl relative">
+       <CardHeader className="flex flex-col items-center text-center py-8 border-b bg-gradient-to-r  to-indigo-600 text-white rounded-t-2xl relative">
   {/* Hình nền */}
   <div
-    className="absolute inset-0 rounded-t-2xl bg-cover bg-center opacity-30"
+    className="absolute inset-0 rounded-t-2xl bg-cover bg-center "
     style={{
       backgroundImage: `url(${profile.background_url || "/default-bg.jpg"})`,
     }}
@@ -133,7 +133,7 @@ export default function AdminProfilePage() {
       </div>
     </div>
   </div>
-</CardHeader>
+    </CardHeader>
 
 
         {/* CONTENT */}
@@ -162,25 +162,78 @@ export default function AdminProfilePage() {
             )}
           </Section>
 
-          {/* 2. Mục tiêu nghề nghiệp */}
-          <Section
-            title="2. Mục tiêu nghề nghiệp"
-            editing={editSection === "career"}
-            onEdit={() => setEditSection("career")}
-            onSave={() => handleSave("career_objective", profile.career_objective)}
+   <Section
+  title="2. Mục tiêu nghề nghiệp"
+  editing={editSection === "career"}
+  onEdit={() => setEditSection("career")}
+  onSave={() => handleSave("career_objective", profile.career_objective)}
+>
+  {editSection === "career" ? (
+    <div className="space-y-4">
+      {(Array.isArray(profile.career_objective)
+        ? profile.career_objective
+        : [{ text: profile.career_objective || "" }]
+      ).map((item, i) => (
+        <div
+          key={i}
+          className="p-3 border rounded-lg bg-gray-50 space-y-2 relative"
+        >
+          {/* Nút xóa */}
+          <button
+            onClick={() => {
+              const updated = (
+                Array.isArray(profile.career_objective)
+                  ? [...profile.career_objective]
+                  : [{ text: profile.career_objective }]
+              ).filter((_, idx) => idx !== i);
+              setProfile({ ...profile, career_objective: updated });
+            }}
+            className="absolute top-2 right-2 text-red-500 hover:text-red-700"
           >
-            {editSection === "career" ? (
-              <textarea
-                className="w-full p-3 border rounded-lg"
-                value={profile.career_objective || ""}
-                onChange={(e) =>
-                  setProfile({ ...profile, career_objective: e.target.value })
-                }
-              />
-            ) : (
-              <TextBox text={profile.career_objective || "Chưa cập nhật."} />
-            )}
-          </Section>
+            ✕
+          </button>
+
+          <EditableField
+            label={`Mục tiêu #${i + 1}`}
+            value={item.text || ""}
+            onChange={(v) => {
+              const updated = (
+                Array.isArray(profile.career_objective)
+                  ? [...profile.career_objective]
+                  : [{ text: profile.career_objective }]
+              );
+              updated[i].text = v;
+              setProfile({ ...profile, career_objective: updated });
+            }}
+          />
+        </div>
+      ))}
+
+      {/* Nút thêm dòng mới */}
+      <button
+        onClick={() => {
+          const updated = Array.isArray(profile.career_objective)
+            ? [...profile.career_objective, { text: "" }]
+            : [{ text: profile.career_objective || "" }, { text: "" }];
+          setProfile({ ...profile, career_objective: updated });
+        }}
+        className="w-full p-2 border border-dashed rounded-lg text-blue-600 hover:bg-blue-50"
+      >
+        + Thêm mục tiêu
+      </button>
+    </div>
+  ) : (
+    <List
+      items={
+        Array.isArray(profile.career_objective)
+          ? profile.career_objective
+          : [{ text: profile.career_objective }]
+      }
+      render={(item) => <p>{item.text || "Chưa cập nhật."}</p>}
+    />
+  )}
+</Section>
+          
 
       {/* 3. Kinh nghiệm làm việc */}
 {/* 3. Kinh nghiệm làm việc */}
@@ -477,8 +530,10 @@ export default function AdminProfilePage() {
   );
 }
 
-/* ===== COMPONENT PHỤ ===== */
-const Section = ({
+
+/* ===== COMPONENTS CHUNG ===== */
+
+export const Section = ({
   title,
   editing,
   onEdit,
@@ -493,41 +548,30 @@ const Section = ({
 }) => (
   <section className="relative">
     <div className="flex justify-between items-center mb-3">
-      <h2 className="font-semibold text-blue-700 text-lg border-b pb-1">
-        {title}
-      </h2>
-      {onEdit &&
-        (editing ? (
-          <Button
-            size="sm"
-            variant="secondary"
-            className="text-green-700 bg-green-100 hover:bg-green-200"
-            onClick={onSave}
-          >
-            💾 Lưu
-          </Button>
-        ) : (
-          <Button
-            size="sm"
-            variant="outline"
-            className="text-blue-600 border-blue-300 hover:bg-blue-50"
-            onClick={onEdit}
-          >
-            ✏️ Sửa
-          </Button>
-        ))}
+      <h2 className="font-semibold text-blue-700 text-lg border-b pb-1">{title}</h2>
+      {onEdit && (
+        <Button
+          size="sm"
+          variant={editing ? "secondary" : "outline"}
+          className={editing 
+            ? "text-green-700 bg-green-100 hover:bg-green-200" 
+            : "text-blue-600 border-blue-300 hover:bg-blue-50"
+          }
+          onClick={editing ? onSave : onEdit}
+        >
+          {editing ? "💾 Lưu" : "✏️ Sửa"}
+        </Button>
+      )}
     </div>
     {children}
   </section>
 );
 
-const Info = ({ label, value }: { label: string; value?: string }) => (
-  <p>
-    <b>{label}:</b> {value || "—"}
-  </p>
+export const Info = ({ label, value }: { label: string; value?: string }) => (
+  <p><b>{label}:</b> {value || "—"}</p>
 );
 
-const EditableField = ({
+export const EditableField = ({
   label,
   value,
   onChange,
@@ -546,31 +590,22 @@ const EditableField = ({
   </div>
 );
 
-const Grid = ({ children }: { children: React.ReactNode }) => (
+export const Grid = ({ children }: { children: React.ReactNode }) => (
   <div className="grid md:grid-cols-2 gap-4 text-gray-700">{children}</div>
 );
 
-const TextBox = ({ text }: { text: string }) => (
-  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-gray-700">
-    {text}
-  </div>
+export const TextBox = ({ text }: { text: string }) => (
+  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-gray-700">{text}</div>
 );
 
-const List = <T,>({
-  items,
-  render,
-}: {
-  items?: T[];
-  render: (item: T) => React.ReactNode;
-}) =>
+export const List = <T,>({ items, render }: { items?: T[]; render: (item: T) => React.ReactNode }) =>
   items?.length ? (
     <div className="space-y-3">
       {items.map((item, i) => (
-        <div key={i} className="p-3 border rounded-lg bg-gray-50 hover:bg-gray-100">
-          {render(item)}
-        </div>
+        <div key={i} className="p-3 border rounded-lg bg-gray-50 hover:bg-gray-100">{render(item)}</div>
       ))}
     </div>
   ) : (
     <p className="text-gray-500">Chưa có dữ liệu.</p>
   );
+
