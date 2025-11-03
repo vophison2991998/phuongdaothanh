@@ -266,3 +266,116 @@ export const getAdminProfile = async (req, res) => {
     res.status(500).json({ message: "Lỗi máy chủ khi lấy hồ sơ" });
   }
 };
+
+
+// PUT /api/admin/profile
+export const updateAdminProfile = async (req, res) => {
+  const adminId = req.user.id; // từ middleware verifyToken
+  const {
+    full_name,
+    email,
+    phone,
+    address,
+    gender,
+    birth_date,
+    position,
+    avatar_url,
+    background_url,
+    career_objective,
+    work_experience,
+    education,
+    skills,
+  } = req.body.profile; // gửi toàn bộ profile từ frontend
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // 1️⃣ Cập nhật profile chính
+    await client.query(
+      `
+      INSERT INTO profile (owner_type, owner_id, full_name, email, phone, address, gender, birth_date, position, avatar_url, background_url)
+      VALUES ('admin', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      ON CONFLICT (owner_type, owner_id) 
+      DO UPDATE SET
+        full_name = EXCLUDED.full_name,
+        email = EXCLUDED.email,
+        phone = EXCLUDED.phone,
+        address = EXCLUDED.address,
+        gender = EXCLUDED.gender,
+        birth_date = EXCLUDED.birth_date,
+        position = EXCLUDED.position,
+        avatar_url = EXCLUDED.avatar_url,
+        background_url = EXCLUDED.background_url
+      `,
+      [
+        adminId,
+        full_name,
+        email,
+        phone,
+        address,
+        gender,
+        birth_date,
+        position,
+        avatar_url,
+        background_url,
+      ]
+    );
+
+    // 2️⃣ Cập nhật career objective
+    await client.query(
+      `
+      INSERT INTO career_objective (owner_type, owner_id, objective)
+      VALUES ('admin', $1, $2)
+      ON CONFLICT (owner_type, owner_id) 
+      DO UPDATE SET objective = EXCLUDED.objective
+      `,
+      [adminId, career_objective]
+    );
+
+    // 3️⃣ Xóa và insert work_experience
+    if (Array.isArray(work_experience)) {
+      await client.query("DELETE FROM work_experience WHERE owner_type='admin' AND owner_id=$1", [adminId]);
+      for (const w of work_experience) {
+        await client.query(
+          `INSERT INTO work_experience (owner_type, owner_id, position, company, start_year, end_year, description)
+           VALUES ('admin', $1, $2, $3, $4, $5, $6)`,
+          [adminId, w.position, w.company, w.start_year, w.end_year, w.description]
+        );
+      }
+    }
+
+    // 4️⃣ Xóa và insert education
+    if (Array.isArray(education)) {
+      await client.query("DELETE FROM education WHERE owner_type='admin' AND owner_id=$1", [adminId]);
+      for (const ed of education) {
+        await client.query(
+          `INSERT INTO education (owner_type, owner_id, school, major, start_year, end_year, achievement)
+           VALUES ('admin', $1, $2, $3, $4, $5, $6)`,
+          [adminId, ed.school, ed.major, ed.start_year, ed.end_year, ed.achievement]
+        );
+      }
+    }
+
+    // 5️⃣ Xóa và insert skills
+    if (Array.isArray(skills)) {
+      await client.query("DELETE FROM skill WHERE owner_type='admin' AND owner_id=$1", [adminId]);
+      for (const s of skills) {
+        await client.query(
+          `INSERT INTO skill (owner_type, owner_id, skill_name, level)
+           VALUES ('admin', $1, $2, $3)`,
+          [adminId, s.skill_name, s.level]
+        );
+      }
+    }
+
+    await client.query("COMMIT");
+    res.json({ message: "Cập nhật hồ sơ thành công" });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("❌ Lỗi cập nhật profile:", err);
+    res.status(500).json({ message: "Cập nhật hồ sơ thất bại" });
+  } finally {
+    client.release();
+  }
+};

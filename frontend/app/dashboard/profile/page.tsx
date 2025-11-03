@@ -2,64 +2,18 @@
 
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "../../components/ui/card";
+import {Card, CardHeader, CardTitle, CardContent,} from "../../components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "../../components/ui/avatar";
 import { Badge } from "../../components/ui/badge";
 import { Progress } from "../../components/ui/progress";
 import { Separator } from "../../components/ui/separator";
 import { Button } from "../../components/ui/button";
-
-interface WorkExperience {
-  position: string;
-  company: string;
-  start_year: string;
-  end_year?: string;
-  description?: string;
-}
-
-interface Education {
-  school: string;
-  major: string;
-  start_year: string;
-  end_year: string;
-  achievement?: string;
-}
-
-interface Skill {
-  skill_name: string;
-  level: string;
-}
-
-interface AdminProfile {
-  admin_id: string;
-  full_name: string;
-  username: string;
-  position?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  gender?: string;
-  religion?: string;
-  birth_date?: string;
-  created_at?: string;
-  avatar_url?: string;
-  career_objective?: string;
-  background_url?: string;
-  work_experience?: WorkExperience[];
-  education?: Education[];
-  skills?: Skill[];
-}
+import { AdminProfile, WorkExperience, Education, Skill } from "../../types/adminProfile";
 
 export default function AdminProfilePage() {
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editSection, setEditSection] = useState<string | null>(null); // ✅ theo dõi section nào đang chỉnh sửa
-
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -229,6 +183,7 @@ export default function AdminProfilePage() {
           </Section>
 
       {/* 3. Kinh nghiệm làm việc */}
+{/* 3. Kinh nghiệm làm việc */}
 <Section
   title="3. Kinh nghiệm làm việc"
   editing={editSection === "work"}
@@ -238,7 +193,18 @@ export default function AdminProfilePage() {
   {editSection === "work" ? (
     <div className="space-y-4">
       {profile.work_experience?.map((w, i) => (
-        <div key={i} className="p-3 border rounded-lg bg-gray-50 space-y-2">
+        <div key={i} className="p-3 border rounded-lg bg-gray-50 space-y-2 relative">
+          {/* Nút xóa dòng */}
+          <button
+            onClick={() => {
+              const updated = profile.work_experience.filter((_, idx) => idx !== i);
+              setProfile({ ...profile, work_experience: updated });
+            }}
+            className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+          >
+            ✕
+          </button>
+
           <EditableField
             label="Vị trí"
             value={w.position}
@@ -288,6 +254,22 @@ export default function AdminProfilePage() {
           />
         </div>
       ))}
+
+      {/* Nút thêm dòng mới */}
+      <button
+        onClick={() =>
+          setProfile({
+            ...profile,
+            work_experience: [
+              ...(profile.work_experience || []),
+              { position: "", company: "", start_year: "", end_year: "", description: "" },
+            ],
+          })
+        }
+        className="w-full p-2 border border-dashed rounded-lg text-blue-600 hover:bg-blue-50"
+      >
+        + Thêm kinh nghiệm
+      </button>
     </div>
   ) : (
     <List
@@ -316,7 +298,18 @@ export default function AdminProfilePage() {
   {editSection === "edu" ? (
     <div className="space-y-4">
       {profile.education?.map((ed, i) => (
-        <div key={i} className="p-3 border rounded-lg bg-gray-50 space-y-2">
+        <div key={i} className="p-3 border rounded-lg bg-gray-50 space-y-2 relative">
+          {/* Nút xóa dòng */}
+          <button
+            onClick={() => {
+              const updated = profile.education.filter((_, idx) => idx !== i);
+              setProfile({ ...profile, education: updated });
+            }}
+            className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+          >
+            ✕
+          </button>
+
           <EditableField
             label="Trường học"
             value={ed.school}
@@ -366,6 +359,22 @@ export default function AdminProfilePage() {
           />
         </div>
       ))}
+
+      {/* Nút thêm dòng mới */}
+      <button
+        onClick={() =>
+          setProfile({
+            ...profile,
+            education: [
+              ...(profile.education || []),
+              { school: "", major: "", start_year: "", end_year: "", achievement: "" },
+            ],
+          })
+        }
+        className="w-full p-2 border border-dashed rounded-lg text-blue-600 hover:bg-blue-50"
+      >
+        + Thêm học vấn
+      </button>
     </div>
   ) : (
     <List
@@ -394,7 +403,18 @@ export default function AdminProfilePage() {
   {editSection === "skills" ? (
     <div className="space-y-4">
       {profile.skills?.map((s, i) => (
-        <div key={i} className="p-3 border rounded-lg bg-gray-50 space-y-2">
+        <div key={i} className="p-3 border rounded-lg bg-gray-50 space-y-2 relative">
+          {/* Nút xóa dòng */}
+          <button
+            onClick={() => {
+              const updated = profile.skills.filter((_, idx) => idx !== i);
+              setProfile({ ...profile, skills: updated });
+            }}
+            className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+          >
+            ✕
+          </button>
+
           <EditableField
             label="Tên kỹ năng"
             value={s.skill_name}
@@ -415,6 +435,19 @@ export default function AdminProfilePage() {
           />
         </div>
       ))}
+
+      {/* Nút thêm dòng mới */}
+      <button
+        onClick={() =>
+          setProfile({
+            ...profile,
+            skills: [...(profile.skills || []), { skill_name: "", level: "" }],
+          })
+        }
+        className="w-full p-2 border border-dashed rounded-lg text-blue-600 hover:bg-blue-50"
+      >
+        + Thêm kỹ năng
+      </button>
     </div>
   ) : (
     <div className="flex flex-wrap gap-2">
@@ -428,6 +461,7 @@ export default function AdminProfilePage() {
     </div>
   )}
 </Section>
+
 
 
           {/* 6. Tiến độ */}
