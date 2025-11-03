@@ -197,6 +197,9 @@ export const getAdminProfile = async (req, res) => {
         p.birth_date,
         p.position,
         p.avatar_url,
+        p.background_url,
+        P.religion,
+        p.created_at,
         co.objective AS career_objective,
 
         -- Kinh nghiệm làm việc

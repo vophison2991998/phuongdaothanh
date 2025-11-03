@@ -1,4 +1,5 @@
 "use client";
+
 import React, {
   createContext,
   useContext,
@@ -8,9 +9,13 @@ import React, {
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
+/* ==========================
+   Kiểu dữ liệu người dùng
+========================== */
 interface User {
   id: number;
   username: string;
+  token: string; // thêm token để frontend gọi API
 }
 
 interface AuthContextType {
@@ -26,23 +31,31 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Giải mã JWT (tự viết, không dùng thư viện)
+/* ==========================
+   Giải mã JWT token
+========================== */
 const decodeToken = (token: string): User | null => {
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
-    return { id: payload.id, username: payload.username };
+    return {
+      id: payload.id,
+      username: payload.username,
+      token, // lưu lại token để sử dụng cho API
+    };
   } catch {
     return null;
   }
 };
 
+/* ==========================
+   Provider chính
+========================== */
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
-  // Hàm kiểm tra token mỗi khi route thay đổi
   useEffect(() => {
     const token = localStorage.getItem("token");
 
@@ -63,7 +76,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setLoading(false);
   }, [pathname, router]);
 
-  // Hàm đăng nhập
   const login = (token: string) => {
     localStorage.setItem("token", token);
     const decoded = decodeToken(token);
@@ -73,7 +85,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  // Hàm đăng xuất
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
@@ -87,7 +98,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   );
 };
 
-// Hook dùng trong component
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth phải được dùng trong AuthProvider");

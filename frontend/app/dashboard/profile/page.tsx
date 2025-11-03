@@ -12,6 +12,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "../../components/ui/avatar"
 import { Badge } from "../../components/ui/badge";
 import { Progress } from "../../components/ui/progress";
 import { Separator } from "../../components/ui/separator";
+import { Button } from "../../components/ui/button";
 
 interface WorkExperience {
   position: string;
@@ -48,6 +49,7 @@ interface AdminProfile {
   created_at?: string;
   avatar_url?: string;
   career_objective?: string;
+  background_url?: string;
   work_experience?: WorkExperience[];
   education?: Education[];
   skills?: Skill[];
@@ -56,6 +58,7 @@ interface AdminProfile {
 export default function AdminProfilePage() {
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editSection, setEditSection] = useState<string | null>(null); // ✅ theo dõi section nào đang chỉnh sửa
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -75,10 +78,17 @@ export default function AdminProfilePage() {
     fetchProfile();
   }, []);
 
+  const handleSave = (field: string, value: any) => {
+    setProfile((prev) => prev && { ...prev, [field]: value });
+    setEditSection(null); // đóng chế độ chỉnh sửa
+  };
+
   if (loading)
     return <div className="p-6 text-center text-gray-500">Đang tải...</div>;
   if (!profile)
-    return <div className="p-6 text-center text-red-500">Không thể tải dữ liệu.</div>;
+    return (
+      <div className="p-6 text-center text-red-500">Không thể tải dữ liệu.</div>
+    );
 
   return (
     <motion.div
@@ -89,83 +99,338 @@ export default function AdminProfilePage() {
     >
       <Card className="max-w-5xl mx-auto shadow-lg rounded-2xl border border-gray-200 bg-white">
         {/* HEADER */}
-        <CardHeader className="flex flex-col items-center text-center py-8 border-b bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-2xl">
-          <Avatar className="w-24 h-24 border-4 border-white shadow-lg">
-            <AvatarImage src={profile.avatar_url || "/default-avatar.png"} />
-            <AvatarFallback>{profile.full_name?.[0] || "A"}</AvatarFallback>
-          </Avatar>
-          <div className="mt-3">
-            <CardTitle className="text-2xl font-bold">{profile.full_name}</CardTitle>
-            <p className="text-blue-100 text-sm">{profile.position || "Chưa cập nhật chức vụ"}</p>
-            <Badge variant="secondary" className="mt-3 bg-white/20 text-white px-3 py-1">
-              @{profile.username}
-            </Badge>
-          </div>
-        </CardHeader>
+       <CardHeader className="flex flex-col items-center text-center py-8 border-b bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-2xl relative">
+  {/* Hình nền */}
+  <div
+    className="absolute inset-0 rounded-t-2xl bg-cover bg-center opacity-30"
+    style={{
+      backgroundImage: `url(${profile.background_url || "/default-bg.jpg"})`,
+    }}
+  ></div>
+
+  {/* Avatar */}
+  <Avatar className="w-24 h-24 border-4 border-white shadow-lg relative z-10">
+    <AvatarImage src={profile.avatar_url || "/default-avatar.png"} />
+    <AvatarFallback>{profile.full_name?.[0] || "A"}</AvatarFallback>
+  </Avatar>
+
+  <div className="mt-3 relative z-10">
+    <CardTitle className="text-2xl font-bold">{profile.full_name}</CardTitle>
+    <p className="text-blue-100 text-sm">
+      {profile.position || "Chưa cập nhật chức vụ"}
+    </p>
+    <Badge
+      variant="secondary"
+      className="mt-3 bg-white/20 text-white px-3 py-1"
+    >
+      @{profile.username}
+    </Badge>
+
+    {/* Nút chỉnh sửa avatar + hình nền */}
+    <div className="flex gap-2 justify-center mt-4">
+      {/* Chỉnh sửa Avatar */}
+      <div className="relative">
+        <Button
+          size="sm"
+          variant="secondary"
+          className="bg-white/80 text-blue-700 hover:bg-white"
+          onClick={() => document.getElementById("upload-avatar")?.click()}
+        >
+          🖼️ Đổi Avatar
+        </Button>
+        <input
+          id="upload-avatar"
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              const imageUrl = URL.createObjectURL(file);
+              setProfile((prev) => ({ ...prev!, avatar_url: imageUrl }));
+            }
+          }}
+        />
+      </div>
+
+      {/* Chỉnh sửa Hình nền */}
+      <div className="relative">
+        <Button
+          size="sm"
+          variant="outline"
+          className="bg-white/60 text-blue-800 hover:bg-white"
+          onClick={() => document.getElementById("upload-bg")?.click()}
+        >
+          🌄 Đổi Hình nền
+        </Button>
+        <input
+          id="upload-bg"
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              const imageUrl = URL.createObjectURL(file);
+              setProfile((prev) => ({ ...prev!, background_url: imageUrl }));
+            }
+          }}
+        />
+      </div>
+    </div>
+  </div>
+</CardHeader>
+
 
         {/* CONTENT */}
         <CardContent className="p-8 space-y-8">
-          <Section title="1. Thông tin cá nhân">
-            <Grid>
-              <Info label="Mã quản trị" value={profile.admin_id} />
-              <Info label="Email" value={profile.email} />
-              <Info label="Điện thoại" value={profile.phone} />
-              <Info label="Địa chỉ" value={profile.address} />
-              <Info label="Giới tính" value={profile.gender} />
-              <Info label="Tôn giáo" value={profile.religion} />
-              <Info label="Ngày sinh" value={formatDate(profile.birth_date)} />
-              <Info label="Ngày tạo" value={formatDate(profile.created_at)} />
-            </Grid>
+          {/* 1. Thông tin cá nhân */}
+          <Section
+            title="1. Thông tin cá nhân"
+            editing={editSection === "info"}
+            onEdit={() => setEditSection("info")}
+            onSave={() => handleSave("info", profile)}
+          >
+            {editSection === "info" ? (
+              <Grid>
+                <EditableField label="Email" value={profile.email} onChange={(v) => setProfile({ ...profile, email: v })} />
+                <EditableField label="Điện thoại" value={profile.phone} onChange={(v) => setProfile({ ...profile, phone: v })} />
+                <EditableField label="Địa chỉ" value={profile.address} onChange={(v) => setProfile({ ...profile, address: v })} />
+                <EditableField label="Giới tính" value={profile.gender} onChange={(v) => setProfile({ ...profile, gender: v })} />
+              </Grid>
+            ) : (
+              <Grid>
+                <Info label="Email" value={profile.email} />
+                <Info label="Điện thoại" value={profile.phone} />
+                <Info label="Địa chỉ" value={profile.address} />
+                <Info label="Giới tính" value={profile.gender} />
+              </Grid>
+            )}
           </Section>
 
-          <Section title="2. Mục tiêu nghề nghiệp">
-            <TextBox text={profile.career_objective || "Chưa cập nhật."} />
+          {/* 2. Mục tiêu nghề nghiệp */}
+          <Section
+            title="2. Mục tiêu nghề nghiệp"
+            editing={editSection === "career"}
+            onEdit={() => setEditSection("career")}
+            onSave={() => handleSave("career_objective", profile.career_objective)}
+          >
+            {editSection === "career" ? (
+              <textarea
+                className="w-full p-3 border rounded-lg"
+                value={profile.career_objective || ""}
+                onChange={(e) =>
+                  setProfile({ ...profile, career_objective: e.target.value })
+                }
+              />
+            ) : (
+              <TextBox text={profile.career_objective || "Chưa cập nhật."} />
+            )}
           </Section>
 
-          <Section title="3. Kinh nghiệm làm việc">
-            <List
-              items={profile.work_experience}
-              render={(w) => (
-                <>
-                  <h3 className="font-semibold">{w.position}</h3>
-                  <p>{w.company}</p>
-                  <small className="text-gray-500">
-                    {w.start_year} - {w.end_year || "Hiện tại"}
-                  </small>
-                  <p>{w.description}</p>
-                </>
-              )}
+      {/* 3. Kinh nghiệm làm việc */}
+<Section
+  title="3. Kinh nghiệm làm việc"
+  editing={editSection === "work"}
+  onEdit={() => setEditSection("work")}
+  onSave={() => handleSave("work_experience", profile.work_experience)}
+>
+  {editSection === "work" ? (
+    <div className="space-y-4">
+      {profile.work_experience?.map((w, i) => (
+        <div key={i} className="p-3 border rounded-lg bg-gray-50 space-y-2">
+          <EditableField
+            label="Vị trí"
+            value={w.position}
+            onChange={(v) => {
+              const updated = [...(profile.work_experience || [])];
+              updated[i].position = v;
+              setProfile({ ...profile, work_experience: updated });
+            }}
+          />
+          <EditableField
+            label="Công ty"
+            value={w.company}
+            onChange={(v) => {
+              const updated = [...(profile.work_experience || [])];
+              updated[i].company = v;
+              setProfile({ ...profile, work_experience: updated });
+            }}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <EditableField
+              label="Năm bắt đầu"
+              value={w.start_year}
+              onChange={(v) => {
+                const updated = [...(profile.work_experience || [])];
+                updated[i].start_year = v;
+                setProfile({ ...profile, work_experience: updated });
+              }}
             />
-          </Section>
-
-          <Section title="4. Trình độ học vấn">
-            <List
-              items={profile.education}
-              render={(ed) => (
-                <>
-                  <h3 className="font-semibold">{ed.school}</h3>
-                  <p>{ed.major}</p>
-                  <small className="text-gray-500">
-                    {ed.start_year} - {ed.end_year}
-                  </small>
-                  <p>{ed.achievement}</p>
-                </>
-              )}
+            <EditableField
+              label="Năm kết thúc"
+              value={w.end_year || ""}
+              onChange={(v) => {
+                const updated = [...(profile.work_experience || [])];
+                updated[i].end_year = v;
+                setProfile({ ...profile, work_experience: updated });
+              }}
             />
-          </Section>
+          </div>
+          <EditableField
+            label="Mô tả công việc"
+            value={w.description}
+            onChange={(v) => {
+              const updated = [...(profile.work_experience || [])];
+              updated[i].description = v;
+              setProfile({ ...profile, work_experience: updated });
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  ) : (
+    <List
+      items={profile.work_experience}
+      render={(w) => (
+        <>
+          <h3 className="font-semibold">{w.position}</h3>
+          <p>{w.company}</p>
+          <small className="text-gray-500">
+            {w.start_year} - {w.end_year || "Hiện tại"}
+          </small>
+          <p>{w.description}</p>
+        </>
+      )}
+    />
+  )}
+</Section>
 
-          <Section title="5. Kỹ năng">
-            <div className="flex flex-wrap gap-2">
-              {profile.skills?.length
-                ? profile.skills.map((s, i) => (
-                    <Badge key={i} className="px-3 py-1 bg-blue-100 text-blue-700">
-                      {s.skill_name} ({s.level})
-                    </Badge>
-                  ))
-                : "Chưa có kỹ năng."}
-            </div>
-          </Section>
+{/* 4. Học vấn */}
+<Section
+  title="4. Trình độ học vấn"
+  editing={editSection === "edu"}
+  onEdit={() => setEditSection("edu")}
+  onSave={() => handleSave("education", profile.education)}
+>
+  {editSection === "edu" ? (
+    <div className="space-y-4">
+      {profile.education?.map((ed, i) => (
+        <div key={i} className="p-3 border rounded-lg bg-gray-50 space-y-2">
+          <EditableField
+            label="Trường học"
+            value={ed.school}
+            onChange={(v) => {
+              const updated = [...(profile.education || [])];
+              updated[i].school = v;
+              setProfile({ ...profile, education: updated });
+            }}
+          />
+          <EditableField
+            label="Chuyên ngành"
+            value={ed.major}
+            onChange={(v) => {
+              const updated = [...(profile.education || [])];
+              updated[i].major = v;
+              setProfile({ ...profile, education: updated });
+            }}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <EditableField
+              label="Năm bắt đầu"
+              value={ed.start_year}
+              onChange={(v) => {
+                const updated = [...(profile.education || [])];
+                updated[i].start_year = v;
+                setProfile({ ...profile, education: updated });
+              }}
+            />
+            <EditableField
+              label="Năm kết thúc"
+              value={ed.end_year}
+              onChange={(v) => {
+                const updated = [...(profile.education || [])];
+                updated[i].end_year = v;
+                setProfile({ ...profile, education: updated });
+              }}
+            />
+          </div>
+          <EditableField
+            label="Thành tích"
+            value={ed.achievement}
+            onChange={(v) => {
+              const updated = [...(profile.education || [])];
+              updated[i].achievement = v;
+              setProfile({ ...profile, education: updated });
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  ) : (
+    <List
+      items={profile.education}
+      render={(ed) => (
+        <>
+          <h3 className="font-semibold">{ed.school}</h3>
+          <p>{ed.major}</p>
+          <small className="text-gray-500">
+            {ed.start_year} - {ed.end_year}
+          </small>
+          <p>{ed.achievement}</p>
+        </>
+      )}
+    />
+  )}
+</Section>
 
+{/* 5. Kỹ năng */}
+<Section
+  title="5. Kỹ năng"
+  editing={editSection === "skills"}
+  onEdit={() => setEditSection("skills")}
+  onSave={() => handleSave("skills", profile.skills)}
+>
+  {editSection === "skills" ? (
+    <div className="space-y-4">
+      {profile.skills?.map((s, i) => (
+        <div key={i} className="p-3 border rounded-lg bg-gray-50 space-y-2">
+          <EditableField
+            label="Tên kỹ năng"
+            value={s.skill_name}
+            onChange={(v) => {
+              const updated = [...(profile.skills || [])];
+              updated[i].skill_name = v;
+              setProfile({ ...profile, skills: updated });
+            }}
+          />
+          <EditableField
+            label="Trình độ"
+            value={s.level}
+            onChange={(v) => {
+              const updated = [...(profile.skills || [])];
+              updated[i].level = v;
+              setProfile({ ...profile, skills: updated });
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div className="flex flex-wrap gap-2">
+      {profile.skills?.length
+        ? profile.skills.map((s, i) => (
+            <Badge key={i} className="px-3 py-1 bg-blue-100 text-blue-700">
+              {s.skill_name} ({s.level})
+            </Badge>
+          ))
+        : "Chưa có kỹ năng."}
+    </div>
+  )}
+</Section>
+
+
+          {/* 6. Tiến độ */}
           <Section title="6. Tiến độ hồ sơ">
             <Progress value={100} />
             <p className="text-xs text-gray-500 mt-1">Đã hoàn thiện 100%</p>
@@ -178,10 +443,46 @@ export default function AdminProfilePage() {
   );
 }
 
-/* ====== COMPONENT PHỤ ====== */
-const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <section>
-    <h2 className="font-semibold text-blue-700 mb-3 text-lg border-b pb-1">{title}</h2>
+/* ===== COMPONENT PHỤ ===== */
+const Section = ({
+  title,
+  editing,
+  onEdit,
+  onSave,
+  children,
+}: {
+  title: string;
+  editing?: boolean;
+  onEdit?: () => void;
+  onSave?: () => void;
+  children: React.ReactNode;
+}) => (
+  <section className="relative">
+    <div className="flex justify-between items-center mb-3">
+      <h2 className="font-semibold text-blue-700 text-lg border-b pb-1">
+        {title}
+      </h2>
+      {onEdit &&
+        (editing ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            className="text-green-700 bg-green-100 hover:bg-green-200"
+            onClick={onSave}
+          >
+            💾 Lưu
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-blue-600 border-blue-300 hover:bg-blue-50"
+            onClick={onEdit}
+          >
+            ✏️ Sửa
+          </Button>
+        ))}
+    </div>
     {children}
   </section>
 );
@@ -192,12 +493,33 @@ const Info = ({ label, value }: { label: string; value?: string }) => (
   </p>
 );
 
+const EditableField = ({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value?: string;
+  onChange: (v: string) => void;
+}) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-600 mb-1">{label}</label>
+    <input
+      className="w-full border p-2 rounded-md"
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  </div>
+);
+
 const Grid = ({ children }: { children: React.ReactNode }) => (
   <div className="grid md:grid-cols-2 gap-4 text-gray-700">{children}</div>
 );
 
 const TextBox = ({ text }: { text: string }) => (
-  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-gray-700">{text}</div>
+  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-gray-700">
+    {text}
+  </div>
 );
 
 const List = <T,>({
@@ -218,6 +540,3 @@ const List = <T,>({
   ) : (
     <p className="text-gray-500">Chưa có dữ liệu.</p>
   );
-
-const formatDate = (date?: string) =>
-  date ? new Date(date).toLocaleDateString("vi-VN") : "—";
