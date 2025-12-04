@@ -11,17 +11,16 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 
+const authRoutes = require("./routes/auth");
+const userRoutes = require("./routes/users");
 
+app.use(cors());
+app.use(express.json());
 
-app.use(cors({
-  origin: ["http://localhost:3000"], 
-  credentials: true,
-}));
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 
-
-app.get("/",(req,res)=>{
-     res.send("API is running successfully!");
-})
+app.get("/", (req, res) => res.send("API running"));
 
 
 const PORT = process.env.PORT;
