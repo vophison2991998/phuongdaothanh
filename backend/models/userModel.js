@@ -1,22 +1,38 @@
 // models/userModel.js
-const db = require("../db");
+import pool from "../config/db.js";   // <--- QUAN TRỌNG: phải có dòng này
 
-async function findUserByEmail(email) {
+
+
+export const findUserByUsername = async (username) => {
+  const query = `
+    SELECT 
+      users.id,
+      users.username,
+      users.password_hash,
+      roles.name AS role_name
+    FROM users
+    LEFT JOIN roles ON roles.id = users.role_id
+    WHERE users.username = $1
+  `;
+  const result = await pool.query(query, [username]);
+  return result.rows[0];
+};
+export async function findUserByEmail(email) {
   const res = await db.query("SELECT u.*, r.name as role_name FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE email=$1", [email]);
   return res.rows[0];
 }
 
-async function findUserById(id) {
+export  async function findUserById(id) {
   const res = await db.query("SELECT u.*, r.name as role_name FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.id=$1", [id]);
   return res.rows[0];
 }
 
-async function getAllUsers() {
+export  async function getAllUsers() {
   const res = await db.query("SELECT u.*, r.name as role_name FROM users u LEFT JOIN roles r ON u.role_id = r.id ORDER BY u.id");
   return res.rows;
 }
 
-async function createUser({ full_name, email, passwordHash, role_id }) {
+export async function createUser({ full_name, email, passwordHash, role_id }) {
   const res = await db.query(
     "INSERT INTO users (full_name, email, password, role_id) VALUES ($1,$2,$3,$4) RETURNING *",
     [full_name, email, passwordHash, role_id]
@@ -24,7 +40,7 @@ async function createUser({ full_name, email, passwordHash, role_id }) {
   return res.rows[0];
 }
 
-async function updateUser(id, { full_name, email, passwordHash, role_id }) {
+export async function updateUser(id, { full_name, email, passwordHash, role_id }) {
   const fields = [];
   const values = [];
   let idx = 1;
@@ -42,9 +58,9 @@ async function updateUser(id, { full_name, email, passwordHash, role_id }) {
   return res.rows[0];
 }
 
-async function deleteUser(id) {
+export async function deleteUser(id) {
   const res = await db.query("DELETE FROM users WHERE id=$1 RETURNING *", [id]);
   return res.rows[0];
 }
 
-module.exports = { findUserByEmail, findUserById, getAllUsers, createUser, updateUser, deleteUser };
+

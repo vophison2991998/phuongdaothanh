@@ -1,9 +1,9 @@
 // controllers/userController.js
-import bcrypt from "bcrypt";
-import { getAllUsers, findUserById, createUser, updateUser, deleteUser } from "../models/userModel";
+import  bcrypt from "bcrypt";
+import { getAllUsers, findUserById, createUser, updateUser, deleteUser } from "../models/userModel.js";
 
 // List users (permission: READ_USER)
-async function listUsers(req, res) {
+export async function listUsers(req, res) {
   try {
     const rows = await getAllUsers();
     res.json(rows);
@@ -13,7 +13,7 @@ async function listUsers(req, res) {
   }
 }
 
-async function getUser(req, res) {
+export async function getUser(req, res) {
   try {
     const id = parseInt(req.params.id);
     const user = await findUserById(id);
@@ -32,7 +32,7 @@ async function getUser(req, res) {
 }
 
 // Create user (permission: CREATE_USER)
-async function createUserHandler(req, res) {
+export async function createUserHandler(req, res) {
   try {
     const { full_name, email, password, role_id } = req.body;
     if (!email || !password || !role_id) return res.status(400).json({ message: "Missing fields" });
@@ -52,7 +52,7 @@ async function createUserHandler(req, res) {
 }
 
 // Update user
-async function updateUserHandler(req, res) {
+export async function updateUserHandler(req, res) {
   try {
     const id = parseInt(req.params.id);
     const target = await findUserById(id);
@@ -76,7 +76,7 @@ async function updateUserHandler(req, res) {
 }
 
 // Delete user
-async function deleteUserHandler(req, res) {
+export async function deleteUserHandler(req, res) {
   try {
     const id = parseInt(req.params.id);
     const target = await findUserById(id);
@@ -96,4 +96,3 @@ async function deleteUserHandler(req, res) {
   }
 }
 
-module.exports = { listUsers, getUser, createUserHandler, updateUserHandler, deleteUserHandler };

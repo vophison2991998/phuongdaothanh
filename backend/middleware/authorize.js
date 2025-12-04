@@ -1,7 +1,7 @@
 // middleware/authorize.js
-const db = require("../db");
+import db from "../config/db.js"
 
-function authorize(permissionAction) {
+export function authorize(permissionAction) {
   return async (req, res, next) => {
     try {
       const roleId = req.user.role_id;
@@ -19,5 +19,3 @@ function authorize(permissionAction) {
     }
   };
 }
-
-module.exports = authorize;

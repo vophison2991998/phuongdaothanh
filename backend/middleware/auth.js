@@ -1,9 +1,11 @@
 // middleware/auth.js
-const jwt = require("jsonwebtoken");
-require("dotenv").config();
-const { findUserById } = require("../models/userModel");
+import  jwt from "jsonwebtoken";
+import { findUserById }from"../models/userModel.js";
 
-async function authenticate(req, res, next) {
+import dotenv from "dotenv";
+dotenv.config();
+
+export  async function authenticate(req, res, next) {
   try {
     const authHeader = req.headers.authorization || "";
     const token = authHeader.split(" ")[1];
@@ -22,4 +24,3 @@ async function authenticate(req, res, next) {
   }
 }
 
-module.exports = authenticate;
